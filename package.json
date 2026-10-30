@@ -8,16 +8,39 @@
     "desklink": "./bin/desklink.js",
     "devlink": "./bin/desklink.js"
   },
-  "files": ["dist", "bin"],
+  "files": [
+    "dist",
+    "bin"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["mcp", "model-context-protocol", "ai-agents", "oauth", "tunnel", "ngrok"],
-  "author": "DeskLink Contributors",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "oauth",
+    "tunnel",
+    "ngrok",
+    "desklink"
+  ],
+  "author": {
+    "name": "Samuel Obinna Chimdi",
+    "email": "sam@chat-atp.com",
+    "url": "https://samuel.chat-atp.com"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sam-14uel/desklink-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sam-14uel/desklink-js/issues"
+  },
+  "homepage": "https://github.com/sam-14uel/desklink-js",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
     "express": "^4.21.0",
@@ -31,5 +54,7 @@
     "typescript": "^5.6.0",
     "tsx": "^4.19.0"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }
