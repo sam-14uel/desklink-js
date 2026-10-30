@@ -8,127 +8,52 @@ DeskLink is a thin authenticated bridge: it loads local MCP servers (especially 
 
 ```bash
 npm install -g desklink
-# Optional: export NGROK_AUTHTOKEN=your_token
-
-# Option A: use a standard mcp.json (recommended)
-desklink start --mcp-config ./mcp.json
-
-# Option B: no config → default official filesystem server (home directory)
 desklink start
-
-# Or specify directories
-desklink start --dir ~/Documents --dir ~/Projects
 ```
+
+## OAuth 2.1 for remote agents
+
+DeskLink can act as an OAuth 2.1 authorization server so cloud MCP clients can obtain scoped access without sharing the device bearer token. Existing bearer-token authentication continues to work.
+
+### Create an app
+
+```bash
+desklink create oauth-app claude
+desklink create oauth-app chatgpt
+desklink create oauth-app manus
+desklink create oauth-app cursor
+# or
+devlink create oauth-app claude
+```
+
+Generates a Client ID (and secret for confidential clients), selects sensible scopes, and prints endpoints. Redirect URIs are optional. Public clients and dynamic registration are supported.
+
+### Endpoints (when `desklink start` is running)
+
+| Endpoint | URL |
+|----------|-----|
+| Metadata | `http://127.0.0.1:8765/.well-known/oauth-authorization-server` |
+| Authorize | `http://127.0.0.1:8765/oauth/authorize` |
+| Token | `http://127.0.0.1:8765/oauth/token` |
+| Revoke | `http://127.0.0.1:8765/oauth/revoke` |
+| Register | `POST http://127.0.0.1:8765/oauth/register` |
+| Dashboard | `http://127.0.0.1:8765/dashboard` |
+| MCP | `http://127.0.0.1:8765/mcp` |
+
+### Manage
+
+```bash
+desklink oauth list
+desklink oauth revoke <client_id>
+```
+
+Open `/dashboard` for the web UI (create apps, view Client IDs, revoke access, see activity). Agents using Authorization Code + PKCE see a consent screen.
+
+Device identity (`~/.desklink/token`) stays separate from OAuth application credentials. Data is stored as JSON under `~/.desklink/oauth/` (no database).
 
 ## Adding MCP servers
 
-DeskLink supports any STDIO MCP server. Define them in a standard `mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/you/Documents"]
-    },
-    "git": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-git", "--repository", "/path/to/repo"]
-    },
-    "custom": {
-      "command": "node",
-      "args": ["my_server.js"],
-      "env": { "DEBUG": "1" },
-      "cwd": "/path/to/workdir"
-    }
-  }
-}
-```
-
-Then:
-
-```bash
-desklink start --mcp-config ./mcp.json
-```
-
-If no `mcp.json` is found, DeskLink automatically starts the official `@modelcontextprotocol/server-filesystem` (controlled by `--dir` or home).
-
-Tool names are namespaced as `servername__toolname` (e.g. `filesystem__list_directory`).
-
-## Listing and testing tools
-
-```bash
-# List all discovered tools (no tunnel started)
-desklink tools
-desklink tools --mcp-config ./mcp.json
-
-# Call a tool with arguments (for testing)
-desklink call filesystem__list_directory --args '{"path":"/tmp"}'
-desklink call filesystem__read_file --args '{"path":"/tmp/test.txt"}'
-```
-
-## Configuration: desklink.config.json
-
-Create `desklink.config.json` (or `~/.desklink/config.json`) for DeskLink settings:
-
-```json
-{
-  "logging": {
-    "level": "info"
-  },
-  "tracing": {
-    "enabled": true,
-    "level": "basic",
-    "redact_sensitive": true
-  },
-  "auth": {
-    "enabled": true
-  },
-  "approvals": {
-    "default": "auto",
-    "tools": {
-      "filesystem__write_file": "prompt",
-      "filesystem__create_directory": "prompt",
-      "git__commit": "prompt"
-    }
-  },
-  "server": {
-    "host": "127.0.0.1",
-    "port": 8765,
-    "mcp_path": "/mcp"
-  },
-  "tunnel": {
-    "provider": "ngrok"
-  }
-}
-```
-
-### Full config options
-
-| Section | Key | Values | Description |
-|---------|-----|--------|-------------|
-| `logging` | `level` | `debug`, `info`, `warning`, `error` | Log verbosity |
-| `tracing` | `enabled` | `true` / `false` | Enable tool-call tracing |
-| `tracing` | `level` | `none`, `basic`, `full` | `basic` = name + duration + error; `full` = + args + truncated result |
-| `tracing` | `redact_sensitive` | `true` / `false` | Mask keys like password/token/secret/key |
-| `auth` | `enabled` | `true` / `false` | Require Bearer token |
-| `auth` | `token` | string | Override auto-generated token |
-| `approvals` | `default` | `auto` / `prompt` | Default policy for all tools |
-| `approvals` | `tools` | map of `namespaced_tool` → `auto`/`prompt` | Per-tool override |
-| `server` | `host`, `port`, `mcp_path` | | Local bind settings |
-| `tunnel` | `provider` | `ngrok`, `none` | Tunnel provider |
-
-**Approval policies:**
-- `auto` — tool calls execute immediately.
-- `prompt` — DeskLink asks for confirmation in the terminal before executing the tool.
-
-Environment variables (`NGROK_AUTHTOKEN`) and CLI flags override the config file.
-
-## Security
-
-- Bearer token required (generated and stored in `~/.desklink/token` by default).
-- Optional per-tool approval prompts before execution (`auto` or `prompt`).
-- Access is controlled by the underlying MCP servers you configure.
+DeskLink supports any STDIO MCP server. Define them in a standard `mcp.json`.
 
 ## Development
 
@@ -136,8 +61,6 @@ Environment variables (`NGROK_AUTHTOKEN`) and CLI flags override the config file
 npm install
 npm run build
 npm run dev -- start --tunnel none
-npm run dev -- tools
-npm run dev -- call filesystem__list_directory --args '{"path":"/tmp"}'
 ```
 
 Package name on npm is `desklink`.
