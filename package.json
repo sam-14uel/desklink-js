@@ -1,30 +1,21 @@
 {
   "name": "desklink",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Turn your local computer into a remotely accessible MCP endpoint for cloud AI agents.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "desklink": "./bin/desklink.js"
+    "desklink": "./bin/desklink.js",
+    "devlink": "./bin/desklink.js"
   },
-  "files": [
-    "dist",
-    "bin"
-  ],
+  "files": ["dist", "bin"],
   "scripts": {
     "build": "tsc",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts",
     "prepublishOnly": "npm run build"
   },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "ai-agents",
-    "filesystem",
-    "tunnel",
-    "ngrok"
-  ],
+  "keywords": ["mcp", "model-context-protocol", "ai-agents", "oauth", "tunnel", "ngrok"],
   "author": "DeskLink Contributors",
   "license": "MIT",
   "dependencies": {
@@ -40,7 +31,5 @@
     "typescript": "^5.6.0",
     "tsx": "^4.19.0"
   },
-  "engines": {
-    "node": ">=18"
-  }
+  "engines": { "node": ">=18" }
 }
