@@ -7,13 +7,13 @@ DeskLink is a thin authenticated bridge. It loads local MCP servers (especially 
 Package name on npm: **`desklink`**  
 CLI commands: `desklink` and `devlink` (alias)
 
-> **Status** – The Node/TypeScript package is under active development. Core OAuth 2.1 helpers and the package skeleton are in place. The full CLI + MCP bridge (parity with the Python version) is being completed. For production use today, prefer the [Python package](https://github.com/sam-14uel/desklink-py).
+Feature parity with the [Python package](https://github.com/sam-14uel/desklink-py).
 
 ---
 
 ## What it does
 
-1. Loads MCP servers from a standard `mcp.json` (or injects the official filesystem server if none are defined).
+1. Loads MCP servers from a standard `mcp.json` (or injects the official `@modelcontextprotocol/server-filesystem` if none are defined).
 2. Starts a local Streamable HTTP server (default `http://127.0.0.1:8765/mcp`).
 3. Proxies every discovered tool under a namespaced name (`servername__toolname`).
 4. Protects the endpoint with a device bearer token **and/or** OAuth 2.1 (Authorization Code + PKCE).
@@ -35,9 +35,13 @@ export NGROK_AUTHTOKEN=your_ngrok_token
 desklink start
 ```
 
-On first run DeskLink will create `~/.desklink/token` (device bearer token), start the configured MCP servers, and print the local + public MCP URLs together with the auth token.
+On first run DeskLink will:
 
-### Useful flags (once CLI is fully wired)
+- Create `~/.desklink/token` (device bearer token)
+- Start the official filesystem MCP server scoped to your home directory (unless you provide an `mcp.json`)
+- Print the **local** and **public** MCP URLs plus the auth token
+
+### Useful flags
 
 ```bash
 desklink start \
@@ -114,16 +118,16 @@ Any STDIO MCP server works. Tools appear as `filesystem__read_file`, `my-custom-
 
 **Approvals**  
 - `"auto"` – run immediately  
-- `"prompt"` – ask before the tool executes
+- `"prompt"` – ask in the terminal before the tool executes
 
 **Tracing levels**  
-- `none` / `basic` / `full`
+- `none` / `basic` / `full` (full logs args + truncated results; sensitive keys are redacted by default)
 
 ---
 
 ## Authentication
 
-### 1. Device bearer token
+### 1. Device bearer token (always available)
 
 Stored at `~/.desklink/token`. Sent as:
 
@@ -133,9 +137,9 @@ Authorization: Bearer <token>
 
 ### 2. OAuth 2.1 (recommended for cloud agents)
 
-DeskLink can act as an OAuth 2.1 authorization server so agents never see your device token.
+DeskLink acts as a full OAuth 2.1 authorization server so agents never see your device token.
 
-**Create an app**
+**Create an app (CLI)**
 
 ```bash
 desklink create oauth-app claude
@@ -145,7 +149,7 @@ desklink create oauth-app cursor
 desklink create oauth-app custom --name "My Agent" --public
 ```
 
-Presets ship with sensible default scopes. Confidential clients receive a Client Secret; public clients rely on PKCE.
+Presets come with sensible default scopes. Confidential clients get a Client Secret; public clients rely on PKCE.
 
 **Endpoints (when `desklink start` is running)**
 
@@ -159,14 +163,16 @@ Presets ship with sensible default scopes. Confidential clients receive a Client
 | Dashboard | `http://127.0.0.1:8765/dashboard` |
 | MCP | `http://127.0.0.1:8765/mcp` |
 
-**Manage**
+When using a tunnel the same paths work on the public URL.
+
+**Manage apps**
 
 ```bash
 desklink oauth list
 desklink oauth revoke <client_id>
 ```
 
-Or open `/dashboard` for the web UI.
+Or open `/dashboard` in a browser – create apps, view Client IDs, revoke access, and see recent activity.
 
 **Scopes**
 
@@ -178,7 +184,7 @@ Or open `/dashboard` for the web UI.
 | `filesystem:write` | Write / create |
 | `admin` | Full control |
 
-All OAuth state is stored as JSON under `~/.desklink/oauth/` (no database).
+All OAuth state lives as JSON under `~/.desklink/oauth/` (no database).
 
 ---
 
@@ -194,11 +200,20 @@ All OAuth state is stored as JSON under `~/.desklink/oauth/` (no database).
 
 ## Extensibility
 
-- **Any STDIO MCP server** – just add it to `mcp.json`.
-- **Approvals & tracing** – configure per-tool policies and log levels.
-- **Tunnel providers** – `ngrok` and `none` today; the interface is designed for more providers later.
-- **Auth** – static bearer + full OAuth 2.1 (PKCE, refresh tokens, dynamic registration, consent screen).
-- **Programmatic use** – import the package and drive the server/bridge from your own Node process once the core modules are complete.
+- **Any STDIO MCP server** – just add it to `mcp.json`. No code changes required.
+- **Approvals & tracing** – configure per-tool policies and log levels without touching the bridge.
+- **Tunnel providers** – currently `ngrok` and `none`. The interface is abstract; additional providers can be added later.
+- **Auth** – static bearer + full OAuth 2.1 (PKCE, refresh tokens, dynamic registration, consent screen). Device identity stays separate from OAuth application credentials.
+- **Programmatic use** – import `desklink` and drive `DeskLinkServer` / `McpBridge` from your own Node process.
+
+```ts
+import { loadConfig, ensureDefaultFilesystem, DeskLinkServer } from "desklink";
+
+const cfg = ensureDefaultFilesystem(loadConfig());
+const server = new DeskLinkServer(cfg);
+await server.startHttpServer();
+await server.startTunnel();
+```
 
 ---
 
