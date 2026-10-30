@@ -4,6 +4,7 @@
   "description": "Turn your local computer into a remotely accessible MCP endpoint for cloud AI agents.",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "desklink": "./bin/desklink.js",
     "devlink": "./bin/desklink.js"
@@ -22,6 +23,7 @@
     "mcp",
     "model-context-protocol",
     "ai-agents",
+    "mcp-bridge",
     "oauth",
     "tunnel",
     "ngrok",
